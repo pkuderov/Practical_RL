@@ -78,5 +78,6 @@ debian/files
 
 # Video lectures
 *.mp4
-*.mp4.part
+*.mp4.*
+*.mkv
 videos/

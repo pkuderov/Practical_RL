@@ -2,14 +2,9 @@
 # ------------------
 # based on http://inst.eecs.berkeley.edu/~cs188/sp09/pacman.html
 
-from game import *
-from learningAgents import ReinforcementAgent
-from featureExtractors import *
-
-import random
-import util
-import math
 from collections import defaultdict
+import numpy as np
+from learningAgents import ReinforcementAgent
 
 
 class QLearningAgent(ReinforcementAgent):
@@ -36,19 +31,19 @@ class QLearningAgent(ReinforcementAgent):
     def __init__(self, **args):
         "We initialize agent and Q-values here."
         ReinforcementAgent.__init__(self, **args)
-        self._qValues = defaultdict(lambda: defaultdict(lambda: 0))
+        self._qvalues = defaultdict(lambda: defaultdict(lambda: 0))
 
     def getQValue(self, state, action):
         """
           Returns Q(state,action)
         """
-        return self._qValues[state][action]
+        return self._qvalues[state][action]
 
     def setQValue(self, state, action, value):
         """
           Sets the Qvalue for [state,action] to the given value
         """
-        self._qValues[state][action] = value
+        self._qvalues[state][action] = value
 
 #---------------------#start of your code#---------------------#
 
@@ -58,31 +53,30 @@ class QLearningAgent(ReinforcementAgent):
           where the max is over legal actions.
         """
 
-        possibleActions = self.getLegalActions(state)
-        # If there are no legal actions, return 0.0
-        if len(possibleActions) == 0:
-            return 0.0
+        possible_actions = self.getLegalActions(state)
+        if not possible_actions:
+            # terminate state, it's value = 0.
+            return 0.
 
-        "*** YOUR CODE HERE ***"
-        raise NotImplementedError
-
-        return 0.
+        action_values = self._qvalues[state]
+        value = max(action_values[action] for action in possible_actions)
+        return value
 
     def getPolicy(self, state):
         """
-          Compute the best action to take in a state. 
-
+          Compute the best action to take in a state.
         """
-        possibleActions = self.getLegalActions(state)
-
-        # If there are no legal actions, return None
-        if len(possibleActions) == 0:
+        possible_actions = self.getLegalActions(state)
+        if not possible_actions:
+            # terminate state, no actions
             return None
 
-        best_action = None
-
-        "*** YOUR CODE HERE ***"
-        raise NotImplementedError
+        best_action, best_value = None, None
+        action_values = self._qvalues[state]
+        for action in possible_actions:
+            value = action_values[action]
+            if best_action is None or value > best_value:
+                best_action, best_value = action, value
 
         return best_action
 
@@ -92,49 +86,31 @@ class QLearningAgent(ReinforcementAgent):
 
           With probability self.epsilon, we should take a random action.
           otherwise - the best policy action (self.getPolicy).
-
-          HINT: You might want to use util.flipCoin(prob)
-          HINT: To pick randomly from a list, use random.choice(list)
-
         """
-
-        # Pick Action
-        possibleActions = self.getLegalActions(state)
-        action = None
-
-        # If there are no legal actions, return None
-        if len(possibleActions) == 0:
+        possible_actions = self.getLegalActions(state)
+        if not possible_actions:
             return None
 
         # agent parameters:
         epsilon = self.epsilon
-
-        "*** YOUR CODE HERE ***"
-        raise NotImplementedError
+        if np.random.uniform(low=0., high=1.) <= epsilon:
+            action = np.random.choice(possible_actions)
+        else:
+            action = self.getPolicy(state)
 
         return action
 
     def update(self, state, action, nextState, reward):
         """
-          You should do your Q-Value update here
-
-          NOTE: You should never call this function,
-          it will be called on your behalf
-
-
+          You should do your Q-Value update here.
         """
         # agent parameters
-        gamma = self.discount
-        learning_rate = self.alpha
+        r, gamma, alpha = reward, self.discount, self.alpha
+        Qsa = self._qvalues[state][action]
+        Vns = self.getValue(nextState)
 
-        "*** YOUR CODE HERE ***"
-        raise NotImplementedError
-
-        reference_qvalue = PleaseImplementMe
-        updated_qvalue = PleaseImplementMe
-
-        self.setQValue(PleaseImplementMe, PleaseImplementMe, updated_qvalue)
-
+        new_qvalue = (1 - alpha) * Qsa + alpha * (r + gamma * Vns)
+        self.setQValue(state, action, new_qvalue)
 
 #---------------------#end of your code#---------------------#
 

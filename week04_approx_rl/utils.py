@@ -11,10 +11,15 @@ def get_cum_discounted_rewards(rewards, gamma):
     evaluates cumulative discounted rewards:
     r_t + gamma * r_{t+1} + gamma^2 * r_{t_2} + ...
     """
-    cum_rewards = []
-    cum_rewards.append(rewards[-1])
-    for r in reversed(rewards[:-1]):
-        cum_rewards.insert(0, r + gamma * cum_rewards[0])
+    cum_rewards = np.empty_like(rewards, dtype=np.float32)
+    cum_rewards[-1] = rewards[-1]
+
+    for i, r in enumerate(reversed(rewards[:-1])):
+        cum_rewards[-(i+2)] = r + .1 * cum_rewards[-(i+1)]
+#     cum_rewards = []
+#     cum_rewards.append(rewards[-1])
+#     for r in reversed(rewards[:-1]):
+#         cum_rewards.insert(0, r + gamma * cum_rewards[0])
     return cum_rewards
 
 
@@ -28,6 +33,9 @@ def play_and_log_episode(env, agent, gamma=0.99, t_max=10000):
     q_spreads = []
     td_errors = []
     rewards = []
+    
+    def get_td_error():
+        return np.abs(rewards[-1] + gamma * v_agent[-1] - v_agent[-2])
 
     s = env.reset()
     for step in range(t_max):
@@ -37,8 +45,7 @@ def play_and_log_episode(env, agent, gamma=0.99, t_max=10000):
         v_agent.append(max_q_value)
         q_spreads.append(max_q_value - min_q_value)
         if step > 0:
-            td_errors.append(
-                np.abs(rewards[-1] + gamma * v_agent[-1] - v_agent[-2]))
+            td_errors.append(get_td_error())
 
         action = qvalues.argmax(axis=-1)[0]
 
@@ -46,10 +53,9 @@ def play_and_log_episode(env, agent, gamma=0.99, t_max=10000):
         rewards.append(r)
         if done:
             break
-    td_errors.append(np.abs(rewards[-1] + gamma * v_agent[-1] - v_agent[-2]))
-
+    td_errors.append(get_td_error())
+    
     v_mc = get_cum_discounted_rewards(rewards, gamma)
-
     return_pack = {
         'states': np.array(states),
         'v_mc': np.array(v_mc),

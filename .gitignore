@@ -81,3 +81,4 @@ debian/files
 *.mp4.*
 *.mkv
 videos/
+*videos/
